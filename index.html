@@ -1,1 +1,661 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PVP Рулетка</title>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+        }
 
+        body {
+            background: var(--tg-theme-bg-color, #ffffff);
+            color: var(--tg-theme-text-color, #000000);
+            padding: 16px;
+        }
+
+        .container {
+            max-width: 400px;
+            margin: 0 auto;
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding: 12px;
+            background: var(--tg-theme-secondary-bg-color, #f0f0f0);
+            border-radius: 12px;
+        }
+
+        .balance {
+            font-size: 18px;
+            font-weight: bold;
+            color: var(--tg-theme-button-color, #40a7e3);
+        }
+
+        .tabs {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 20px;
+        }
+
+        .tab {
+            flex: 1;
+            padding: 12px;
+            background: var(--tg-theme-secondary-bg-color, #f0f0f0);
+            border: none;
+            border-radius: 8px;
+            color: var(--tg-theme-text-color, #000000);
+            font-size: 16px;
+            cursor: pointer;
+            transition: 0.3s;
+        }
+
+        .tab.active {
+            background: var(--tg-theme-button-color, #40a7e3);
+            color: var(--tg-theme-button-text-color, #ffffff);
+        }
+
+        .room-card {
+            background: var(--tg-theme-secondary-bg-color, #f0f0f0);
+            border-radius: 12px;
+            padding: 16px;
+            margin-bottom: 12px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .room-info {
+            flex: 1;
+        }
+
+        .room-bet {
+            font-size: 20px;
+            font-weight: bold;
+            color: var(--tg-theme-button-color, #40a7e3);
+        }
+
+        .room-players {
+            color: var(--tg-theme-hint-color, #999999);
+            margin-top: 4px;
+        }
+
+        .join-btn {
+            background: var(--tg-theme-button-color, #40a7e3);
+            color: var(--tg-theme-button-text-color, #ffffff);
+            border: none;
+            border-radius: 8px;
+            padding: 10px 20px;
+            font-size: 14px;
+            cursor: pointer;
+        }
+
+        .create-room {
+            background: var(--tg-theme-secondary-bg-color, #f0f0f0);
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+
+        .input-group {
+            margin-bottom: 16px;
+        }
+
+        .input-group label {
+            display: block;
+            margin-bottom: 8px;
+            color: var(--tg-theme-hint-color, #999999);
+        }
+
+        .input-group input {
+            width: 100%;
+            padding: 12px;
+            background: var(--tg-theme-bg-color, #ffffff);
+            border: 1px solid var(--tg-theme-hint-color, #cccccc);
+            border-radius: 8px;
+            color: var(--tg-theme-text-color, #000000);
+            font-size: 16px;
+        }
+
+        .bet-presets {
+            display: flex;
+            gap: 8px;
+            margin-top: 8px;
+            flex-wrap: wrap;
+        }
+
+        .bet-preset {
+            background: var(--tg-theme-button-color, #40a7e3);
+            color: var(--tg-theme-button-text-color, #ffffff);
+            border: none;
+            border-radius: 6px;
+            padding: 8px 16px;
+            font-size: 14px;
+            cursor: pointer;
+            opacity: 0.8;
+        }
+
+        .bet-preset:hover {
+            opacity: 1;
+        }
+
+        .create-btn {
+            width: 100%;
+            padding: 16px;
+            background: var(--tg-theme-button-color, #40a7e3);
+            color: var(--tg-theme-button-text-color, #ffffff);
+            border: none;
+            border-radius: 12px;
+            font-size: 18px;
+            font-weight: bold;
+            cursor: pointer;
+            margin-top: 16px;
+        }
+
+        .room-detail {
+            background: var(--tg-theme-secondary-bg-color, #f0f0f0);
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+
+        .players-list {
+            margin: 20px 0;
+        }
+
+        .player-item {
+            display: flex;
+            align-items: center;
+            padding: 12px;
+            background: var(--tg-theme-bg-color, #ffffff);
+            border-radius: 8px;
+            margin-bottom: 8px;
+        }
+
+        .player-avatar {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background: var(--tg-theme-button-color, #40a7e3);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+            margin-right: 12px;
+        }
+
+        .player-name {
+            flex: 1;
+            font-weight: 500;
+        }
+
+        .host-badge {
+            background: gold;
+            color: black;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            margin-left: 8px;
+        }
+
+        .start-btn {
+            width: 100%;
+            padding: 16px;
+            background: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 12px;
+            font-size: 18px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        .start-btn:disabled {
+            background: #cccccc;
+            cursor: not-allowed;
+        }
+
+        .roulette-animation {
+            text-align: center;
+            padding: 40px 20px;
+        }
+
+        .spinner {
+            width: 80px;
+            height: 80px;
+            border: 8px solid var(--tg-theme-secondary-bg-color, #f0f0f0);
+            border-top: 8px solid var(--tg-theme-button-color, #40a7e3);
+            border-radius: 50%;
+            margin: 20px auto;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .winner-announcement {
+            text-align: center;
+            padding: 30px 20px;
+        }
+
+        .winner-name {
+            font-size: 24px;
+            font-weight: bold;
+            color: gold;
+            margin: 20px 0;
+        }
+
+        .prize-amount {
+            font-size: 32px;
+            font-weight: bold;
+            color: var(--tg-theme-button-color, #40a7e3);
+            margin: 20px 0;
+        }
+
+        .game-btn {
+            background: var(--tg-theme-button-color, #40a7e3);
+            color: var(--tg-theme-button-text-color, #ffffff);
+            border: none;
+            border-radius: 12px;
+            padding: 16px 32px;
+            font-size: 18px;
+            font-weight: bold;
+            cursor: pointer;
+            width: 100%;
+            margin-top: 20px;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: var(--tg-theme-hint-color);
+        }
+
+        .error-message {
+            background: #ff4444;
+            color: white;
+            padding: 12px;
+            border-radius: 8px;
+            margin-bottom: 16px;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <div class="container" id="app">
+        <div class="header">
+            <span>💰 Баланс: <span id="balanceDisplay">0</span> ⭐</span>
+            <button class="join-btn" onclick="depositStars()">Пополнить</button>
+        </div>
+
+        <div id="mainContent">
+            <!-- Сюда будет подгружаться контент через JavaScript -->
+        </div>
+    </div>
+
+    <script>
+        let tg = window.Telegram.WebApp;
+        let userId = tg.initDataUnsafe.user?.id;
+        let username = tg.initDataUnsafe.user?.username || 'Player';
+        let firstName = tg.initDataUnsafe.user?.first_name || 'Игрок';
+
+        let currentView = 'rooms';
+        let currentRoom = null;
+        let refreshInterval = null;
+
+        tg.ready();
+        tg.expand();
+
+        // Загружаем профиль
+        loadProfile();
+
+        // Показываем главное меню
+        showMainMenu();
+
+        function loadProfile() {
+            tg.sendData(JSON.stringify({
+                action: 'get_profile'
+            }));
+        }
+
+        function showMainMenu() {
+            document.getElementById('mainContent').innerHTML = `
+                <div class="tabs">
+                    <button class="tab active" onclick="switchTab('rooms')">Комнаты</button>
+                    <button class="tab" onclick="switchTab('create')">Создать</button>
+                    <button class="tab" onclick="switchTab('profile')">Профиль</button>
+                </div>
+
+                <div id="roomsTab" style="display: block;">
+                    <div id="roomsList"></div>
+                    <div id="noRooms" style="text-align: center; padding: 40px; color: var(--tg-theme-hint-color); display: none;">
+                        Нет активных комнат<br>
+                        <button class="game-btn" onclick="switchTab('create')" style="margin-top: 20px;">Создать комнату</button>
+                    </div>
+                </div>
+
+                <div id="createTab" style="display: none;">
+                    <div class="create-room">
+                        <h3 style="margin-bottom: 20px;">Создать новую игру</h3>
+
+                        <div class="input-group">
+                            <label>Ставка (звезды)</label>
+                            <input type="number" id="betAmount" value="10" min="1" max="1000">
+                            <div class="bet-presets">
+                                <button class="bet-preset" onclick="setBet(10)">10 ⭐</button>
+                                <button class="bet-preset" onclick="setBet(50)">50 ⭐</button>
+                                <button class="bet-preset" onclick="setBet(100)">100 ⭐</button>
+                                <button class="bet-preset" onclick="setBet(500)">500 ⭐</button>
+                            </div>
+                        </div>
+
+                        <button class="create-btn" onclick="createRoom()">Создать комнату</button>
+                    </div>
+                </div>
+
+                <div id="profileTab" style="display: none;">
+                    <div class="room-detail">
+                        <h3 style="margin-bottom: 20px;">Твой профиль</h3>
+
+                        <div style="margin-bottom: 16px;">
+                            <div style="color: var(--tg-theme-hint-color);">Имя:</div>
+                            <div style="font-size: 18px;" id="profileName">${firstName}</div>
+                        </div>
+
+                        <div style="margin-bottom: 16px;">
+                            <div style="color: var(--tg-theme-hint-color);">Username:</div>
+                            <div style="font-size: 18px;" id="profileUsername">@${username}</div>
+                        </div>
+
+                        <div style="margin-bottom: 16px;">
+                            <div style="color: var(--tg-theme-hint-color);">Баланс:</div>
+                            <div style="font-size: 24px; font-weight: bold; color: var(--tg-theme-button-color);" id="profileBalance">0 ⭐</div>
+                        </div>
+
+                        <div style="margin-bottom: 16px;">
+                            <div style="color: var(--tg-theme-hint-color);">Сыграно игр:</div>
+                            <div style="font-size: 18px;" id="profileGames">0</div>
+                        </div>
+
+                        <div style="margin-bottom: 16px;">
+                            <div style="color: var(--tg-theme-hint-color);">Побед:</div>
+                            <div style="font-size: 18px;" id="profileWins">0</div>
+                        </div>
+
+                        <div style="margin-bottom: 16px;">
+                            <div style="color: var(--tg-theme-hint-color);">Всего выиграно:</div>
+                            <div style="font-size: 18px;" id="profileWon">0 ⭐</div>
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            // Запускаем обновление комнат
+            startRoomsRefresh();
+        }
+
+        function switchTab(tab) {
+            currentView = tab;
+
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            event.target.classList.add('active');
+
+            document.getElementById('roomsTab').style.display = tab === 'rooms' ? 'block' : 'none';
+            document.getElementById('createTab').style.display = tab === 'create' ? 'block' : 'none';
+            document.getElementById('profileTab').style.display = tab === 'profile' ? 'block' : 'none';
+
+            if (tab === 'rooms') {
+                loadRooms();
+                startRoomsRefresh();
+            } else {
+                stopRoomsRefresh();
+            }
+        }
+
+        function startRoomsRefresh() {
+            if (refreshInterval) clearInterval(refreshInterval);
+            refreshInterval = setInterval(loadRooms, 3000);
+        }
+
+        function stopRoomsRefresh() {
+            if (refreshInterval) {
+                clearInterval(refreshInterval);
+                refreshInterval = null;
+            }
+        }
+
+        function loadRooms() {
+            tg.sendData(JSON.stringify({
+                action: 'get_rooms'
+            }));
+        }
+
+        function setBet(amount) {
+            document.getElementById('betAmount').value = amount;
+        }
+
+        function createRoom() {
+            let bet = parseInt(document.getElementById('betAmount').value) || 10;
+
+            tg.sendData(JSON.stringify({
+                action: 'create_room',
+                bet: bet
+            }));
+        }
+
+        function joinRoom(roomId) {
+            tg.sendData(JSON.stringify({
+                action: 'join_room',
+                room_id: roomId
+            }));
+        }
+
+        function leaveRoom() {
+            if (!currentRoom) return;
+
+            tg.sendData(JSON.stringify({
+                action: 'leave_room',
+                room_id: currentRoom.id
+            }));
+        }
+
+        function startGame() {
+            if (!currentRoom) return;
+
+            tg.sendData(JSON.stringify({
+                action: 'start_game',
+                room_id: currentRoom.id
+            }));
+        }
+
+        function depositStars() {
+            let amount = prompt('Введите количество звезд для пополнения (50, 100, 200, 500, 1000, 5000):', '100');
+            if (amount && !isNaN(amount) && amount > 0) {
+                tg.sendData(JSON.stringify({
+                    action: 'deposit_stars',
+                    amount: parseInt(amount)
+                }));
+            }
+        }
+
+        function showRoom(room) {
+            stopRoomsRefresh();
+            currentRoom = room;
+
+            let isCreator = room.creator === userId;
+            let playersHtml = '';
+
+            room.players.forEach((player, index) => {
+                let playerName = player.username || 'Игрок';
+                playersHtml += `
+                    <div class="player-item">
+                        <div class="player-avatar">${playerName[0]?.toUpperCase() || '?'}</div>
+                        <div class="player-name">${playerName}</div>
+                        ${index === 0 ? '<span class="host-badge">ХОСТ</span>' : ''}
+                    </div>
+                `;
+            });
+
+            document.getElementById('mainContent').innerHTML = `
+                <button onclick="backToRooms()" style="background: none; border: none; color: var(--tg-theme-button-color); font-size: 16px; margin-bottom: 16px; cursor: pointer;">← Назад</button>
+
+                <div class="room-detail">
+                    <h3>Комната #${room.id.split('_')[1]}</h3>
+
+                    <div style="font-size: 24px; font-weight: bold; color: var(--tg-theme-button-color); margin: 16px 0;">
+                        ${room.bet} ⭐
+                    </div>
+
+                    <div class="players-list">
+                        ${playersHtml}
+                    </div>
+
+                    ${isCreator ?
+                        `<button class="start-btn" onclick="startGame()" ${room.players.length < 2 ? 'disabled' : ''}>
+                            Начать игру (${room.players.length}/${room.max_players})
+                        </button>` :
+                        `<div style="text-align: center; padding: 20px; color: var(--tg-theme-hint-color);">
+                            Ожидание начала игры...
+                            <button class="game-btn" onclick="leaveRoom()" style="margin-top: 16px; background: #ff4444;">Покинуть комнату</button>
+                        </div>`
+                    }
+                </div>
+            `;
+        }
+
+        function showGame(roomId) {
+            document.getElementById('mainContent').innerHTML = `
+                <div class="roulette-animation">
+                    <h2>🎰 РУЛЕТКА</h2>
+                    <div class="spinner"></div>
+                    <p style="margin-top: 20px;">Выбираем победителя...</p>
+                </div>
+            `;
+        }
+
+        function showWinner(winner, prize, players) {
+            let isWinner = winner.id === userId;
+            let winnerName = winner.username || 'Игрок';
+
+            document.getElementById('mainContent').innerHTML = `
+                <div class="winner-announcement">
+                    ${isWinner ? '🎉🎉🎉' : '😢'}
+                    <div class="winner-name">${winnerName}</div>
+                    <div>${isWinner ? 'ТЫ ПОБЕДИЛ!' : 'ПОБЕДИТЕЛЬ'}</div>
+                    <div class="prize-amount">${prize} ⭐</div>
+                    <div>Игроков: ${players.length}</div>
+                    <button class="game-btn" onclick="backToRooms()">Играть снова</button>
+                </div>
+            `;
+        }
+
+        function backToRooms() {
+            currentRoom = null;
+            showMainMenu();
+            loadRooms();
+        }
+
+        function showError(message) {
+            let errorDiv = document.createElement('div');
+            errorDiv.className = 'error-message';
+            errorDiv.textContent = message;
+
+            let mainContent = document.getElementById('mainContent');
+            mainContent.insertBefore(errorDiv, mainContent.firstChild);
+
+            setTimeout(() => {
+                errorDiv.remove();
+            }, 3000);
+        }
+
+        // Обработка данных от бота
+        window.addEventListener('message', function(event) {
+            try {
+                let data = typeof event.data === 'string' ? JSON.parse(event.data) : event.data;
+
+                if (data.action === 'profile_update') {
+                    document.getElementById('balanceDisplay').textContent = data.balance;
+
+                    if (document.getElementById('profileBalance')) {
+                        document.getElementById('profileBalance').textContent = data.balance + ' ⭐';
+                        document.getElementById('profileGames').textContent = data.games;
+                        document.getElementById('profileWins').textContent = data.wins;
+                        document.getElementById('profileWon').textContent = data.total_won + ' ⭐';
+                    }
+                }
+
+                else if (data.action === 'rooms_update') {
+                    let roomsList = document.getElementById('roomsList');
+                    let noRooms = document.getElementById('noRooms');
+
+                    if (!roomsList) return;
+
+                    if (data.rooms.length === 0) {
+                        roomsList.innerHTML = '';
+                        noRooms.style.display = 'block';
+                    } else {
+                        noRooms.style.display = 'none';
+
+                        let html = '';
+                        data.rooms.forEach(room => {
+                            html += `
+                                <div class="room-card">
+                                    <div class="room-info">
+                                        <div class="room-bet">${room.bet} ⭐</div>
+                                        <div class="room-players">👥 ${room.players}/${room.max_players} игроков</div>
+                                    </div>
+                                    <button class="join-btn" onclick="joinRoom('${room.id}')">Войти</button>
+                                </div>
+                            `;
+                        });
+                        roomsList.innerHTML = html;
+                    }
+                }
+
+                else if (data.success && data.action === 'room_created') {
+                    showRoom(data.room_data);
+                }
+
+                else if (data.success && data.action === 'room_joined') {
+                    showRoom(data.room_data);
+                }
+
+                else if (data.success && data.action === 'room_left') {
+                    backToRooms();
+                }
+
+                else if (data.success && data.action === 'game_started') {
+                    showGame(data.room_id);
+                }
+
+                else if (data.action === 'game_result') {
+                    showWinner(data.winner, data.prize, data.players);
+                }
+
+                else if (data.error) {
+                    showError(data.error);
+                }
+
+            } catch (e) {
+                console.log('Error parsing message:', e);
+            }
+        });
+
+        // Обработка данных от бота через Telegram
+        tg.onEvent('mainButtonClicked', function() {
+            // Для будущего использования
+        });
+    </script>
+</body>
+</html>
